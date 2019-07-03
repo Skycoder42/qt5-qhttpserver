@@ -49,9 +49,10 @@ QT_BEGIN_NAMESPACE
 class QHttpServerResponsePrivate
 {
 public:
-    QByteArray mimeType;
-    QByteArray data;
-    QHttpServerResponse::StatusCode statusCode;
+	QByteArray mimeType;
+	QByteArray data;
+	QHttpServerResponse::StatusCode statusCode;
+	QHttpServerResponse::HeaderMap headers;
 };
 
 QT_END_NAMESPACE

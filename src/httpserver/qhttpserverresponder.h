@@ -47,119 +47,121 @@ class QHttpServerRequest;
 class QHttpServerResponderPrivate;
 class Q_HTTPSERVER_EXPORT QHttpServerResponder final
 {
-    Q_DECLARE_PRIVATE(QHttpServerResponder)
+	Q_DECLARE_PRIVATE(QHttpServerResponder)
 
-    friend class QAbstractHttpServer;
+	friend class QAbstractHttpServer;
 
 public:
-    enum class StatusCode {
-        // 1xx: Informational
-        Continue = 100,
-        SwitchingProtocols,
-        Processing,
+	using HeaderMap = QMap<QByteArray, QByteArray>;
 
-        // 2xx: Success
-        Ok = 200,
-        Created,
-        Accepted,
-        NonAuthoritativeInformation,
-        NoContent,
-        ResetContent,
-        PartialContent,
-        MultiStatus,
-        AlreadyReported,
-        IMUsed = 226,
+	enum class StatusCode {
+		// 1xx: Informational
+		Continue = 100,
+		SwitchingProtocols,
+		Processing,
 
-        // 3xx: Redirection
-        MultipleChoices = 300,
-        MovedPermanently,
-        Found,
-        SeeOther,
-        NotModified,
-        UseProxy,
-        // 306: not used, was proposed as "Switch Proxy" but never standardized
-        TemporaryRedirect = 307,
-        PermanentRedirect,
+		// 2xx: Success
+		Ok = 200,
+		Created,
+		Accepted,
+		NonAuthoritativeInformation,
+		NoContent,
+		ResetContent,
+		PartialContent,
+		MultiStatus,
+		AlreadyReported,
+		IMUsed = 226,
 
-        // 4xx: Client Error
-        BadRequest = 400,
-        Unauthorized,
-        PaymentRequired,
-        Forbidden,
-        NotFound,
-        MethodNotAllowed,
-        NotAcceptable,
-        ProxyAuthenticationRequired,
-        RequestTimeout,
-        Conflict,
-        Gone,
-        LengthRequired,
-        PreconditionFailed,
-        PayloadTooLarge,
-        UriTooLong,
-        UnsupportedMediaType,
-        RequestRangeNotSatisfiable,
-        ExpectationFailed,
-        ImATeapot,
-        MisdirectedRequest = 421,
-        UnprocessableEntity,
-        Locked,
-        FailedDependency,
-        UpgradeRequired = 426,
-        PreconditionRequired = 428,
-        TooManyRequests,
-        RequestHeaderFieldsTooLarge = 431,
-        UnavailableForLegalReasons = 451,
+		// 3xx: Redirection
+		MultipleChoices = 300,
+		MovedPermanently,
+		Found,
+		SeeOther,
+		NotModified,
+		UseProxy,
+		// 306: not used, was proposed as "Switch Proxy" but never standardized
+		TemporaryRedirect = 307,
+		PermanentRedirect,
 
-        // 5xx: Server Error
-        InternalServerError = 500,
-        NotImplemented,
-        BadGateway,
-        ServiceUnavailable,
-        GatewayTimeout,
-        HttpVersionNotSupported,
-        VariantAlsoNegotiates,
-        InsufficientStorage,
-        LoopDetected,
-        NotExtended = 510,
-        NetworkAuthenticationRequired,
-        NetworkConnectTimeoutError = 599,
-    };
+		// 4xx: Client Error
+		BadRequest = 400,
+		Unauthorized,
+		PaymentRequired,
+		Forbidden,
+		NotFound,
+		MethodNotAllowed,
+		NotAcceptable,
+		ProxyAuthenticationRequired,
+		RequestTimeout,
+		Conflict,
+		Gone,
+		LengthRequired,
+		PreconditionFailed,
+		PayloadTooLarge,
+		UriTooLong,
+		UnsupportedMediaType,
+		RequestRangeNotSatisfiable,
+		ExpectationFailed,
+		ImATeapot,
+		MisdirectedRequest = 421,
+		UnprocessableEntity,
+		Locked,
+		FailedDependency,
+		UpgradeRequired = 426,
+		PreconditionRequired = 428,
+		TooManyRequests,
+		RequestHeaderFieldsTooLarge = 431,
+		UnavailableForLegalReasons = 451,
 
-    QHttpServerResponder(QHttpServerResponder &&other);
-    ~QHttpServerResponder();
+		// 5xx: Server Error
+		InternalServerError = 500,
+		NotImplemented,
+		BadGateway,
+		ServiceUnavailable,
+		GatewayTimeout,
+		HttpVersionNotSupported,
+		VariantAlsoNegotiates,
+		InsufficientStorage,
+		LoopDetected,
+		NotExtended = 510,
+		NetworkAuthenticationRequired,
+		NetworkConnectTimeoutError = 599,
+	};
 
-    void write(QIODevice *data, const QByteArray &mimeType, StatusCode status = StatusCode::Ok);
-    void write(const QByteArray &data,
-               const QByteArray &mimeType,
-               StatusCode status = StatusCode::Ok);
-    void write(const QJsonDocument &document, StatusCode status = StatusCode::Ok);
-    void write(StatusCode status = StatusCode::Ok);
+	QHttpServerResponder(QHttpServerResponder &&other);
+	~QHttpServerResponder();
 
-    QTcpSocket *socket() const;
+	void write(QIODevice *data, const QByteArray &mimeType, StatusCode status = StatusCode::Ok);
+	void write(const QByteArray &data,
+			   const QByteArray &mimeType,
+			   StatusCode status = StatusCode::Ok);
+	void write(const QJsonDocument &document, StatusCode status = StatusCode::Ok);
+	void write(StatusCode status = StatusCode::Ok);
 
-    bool addHeader(const QByteArray &key, const QByteArray &value);
+	QTcpSocket *socket() const;
 
-    template <typename... Args>
-    inline void addHeaders(const QPair<QByteArray, QByteArray> &first, Args &&... others)
-    {
-        addHeader(first.first, first.second);
-        addHeaders(std::forward<Args>(others)...);
-    }
+	bool addHeader(const QByteArray &key, const QByteArray &value);
 
-    template <typename... Args>
-    inline void addHeaders(const QByteArray &key, const QByteArray &value, Args &&... others)
-    {
-        addHeader(key, value);
-        addHeaders(std::forward<Args>(others)...);
-    }
+	template <typename... Args>
+	inline void addHeaders(const QPair<QByteArray, QByteArray> &first, Args &&... others)
+	{
+		addHeader(first.first, first.second);
+		addHeaders(std::forward<Args>(others)...);
+	}
+
+	template <typename... Args>
+	inline void addHeaders(const QByteArray &key, const QByteArray &value, Args &&... others)
+	{
+		addHeader(key, value);
+		addHeaders(std::forward<Args>(others)...);
+	}
 
 private:
-    QHttpServerResponder(const QHttpServerRequest &request, QTcpSocket *socket);
+	QHttpServerResponder(const QHttpServerRequest &request, QTcpSocket *socket);
 
-    inline void addHeaders() {}
+	inline void addHeaders() {}
 
-    QScopedPointer<QHttpServerResponderPrivate> d_ptr;
+	QScopedPointer<QHttpServerResponderPrivate> d_ptr;
 };
 
 QT_END_NAMESPACE

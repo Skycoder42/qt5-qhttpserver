@@ -46,39 +46,40 @@ const QByteArray mimeApplicationJson("application/json");
 }
 
 QHttpServerResponse::QHttpServerResponse(QHttpServerResponse &&other)
-    : d_ptr(other.d_ptr.take())
+	: d_ptr(other.d_ptr.take())
 {
 }
 
 QHttpServerResponse::QHttpServerResponse(const QHttpServerResponse::StatusCode statusCode)
-    : QHttpServerResponse(mimeTextHtml, QByteArray(), statusCode)
+	: QHttpServerResponse(mimeTextHtml, QByteArray(), statusCode)
 {
 }
 
 QHttpServerResponse::QHttpServerResponse(const char *data)
-    : QHttpServerResponse(QByteArray(data))
+	: QHttpServerResponse(QByteArray(data))
 {
 }
 
 QHttpServerResponse::QHttpServerResponse(const QString &data)
-    : QHttpServerResponse(data.toUtf8())
+	: QHttpServerResponse(data.toUtf8())
 {
 }
 
 QHttpServerResponse::QHttpServerResponse(const QByteArray &data)
-    : QHttpServerResponse(QMimeDatabase().mimeTypeForData(data).name().toLocal8Bit(), data)
+	: QHttpServerResponse(QMimeDatabase().mimeTypeForData(data).name().toLocal8Bit(), data)
 {
 }
 
 QHttpServerResponse::QHttpServerResponse(const QJsonObject &data)
-    : QHttpServerResponse(mimeApplicationJson, QJsonDocument(data).toJson())
+	: QHttpServerResponse(mimeApplicationJson, QJsonDocument(data).toJson())
 {
 }
 
 QHttpServerResponse::QHttpServerResponse(const QByteArray &mimeType,
-                                         const QByteArray &data,
-                                         const StatusCode status)
-    : QHttpServerResponse(new QHttpServerResponsePrivate{mimeType, data, status})
+										 const QByteArray &data,
+										 const StatusCode status,
+										 const HeaderMap &headers)
+	: QHttpServerResponse(new QHttpServerResponsePrivate{mimeType, data, status, headers})
 {
 }
 
@@ -88,36 +89,42 @@ QHttpServerResponse::~QHttpServerResponse()
 
 QHttpServerResponse QHttpServerResponse::fromFile(const QString &fileName)
 {
-    QFile file(fileName);
-    if (!file.open(QFile::ReadOnly))
-        return QHttpServerResponse(StatusCode::NotFound);
-    const QByteArray data = file.readAll();
-    file.close();
-    const QByteArray mimeType = QMimeDatabase().mimeTypeForFileNameAndData(fileName, data).name().toLocal8Bit();
-    return QHttpServerResponse(mimeType, data);
+	QFile file(fileName);
+	if (!file.open(QFile::ReadOnly))
+		return QHttpServerResponse(StatusCode::NotFound);
+	const QByteArray data = file.readAll();
+	file.close();
+	const QByteArray mimeType = QMimeDatabase().mimeTypeForFileNameAndData(fileName, data).name().toLocal8Bit();
+	return QHttpServerResponse(mimeType, data);
 }
 
 QHttpServerResponse::QHttpServerResponse(QHttpServerResponsePrivate *d)
-    : d_ptr(d)
+	: d_ptr(d)
 {
 }
 
 QByteArray QHttpServerResponse::data() const
 {
-    Q_D(const QHttpServerResponse);
-    return d->data;
+	Q_D(const QHttpServerResponse);
+	return d->data;
 }
 
 QByteArray QHttpServerResponse::mimeType() const
 {
-    Q_D(const QHttpServerResponse);
-    return d->mimeType;
+	Q_D(const QHttpServerResponse);
+	return d->mimeType;
 }
 
 QHttpServerResponse::StatusCode QHttpServerResponse::statusCode() const
 {
-    Q_D(const QHttpServerResponse);
-    return d->statusCode;
+	Q_D(const QHttpServerResponse);
+	return d->statusCode;
+}
+
+QHttpServerResponse::HeaderMap QHttpServerResponse::headers() const
+{
+	Q_D(const QHttpServerResponse);
+	return d->headers;
 }
 
 QT_END_NAMESPACE

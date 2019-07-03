@@ -41,38 +41,42 @@ class QJsonObject;
 class QHttpServerResponsePrivate;
 class Q_HTTPSERVER_EXPORT QHttpServerResponse
 {
-    Q_DECLARE_PRIVATE(QHttpServerResponse)
+	Q_DECLARE_PRIVATE(QHttpServerResponse)
 
 public:
-    using StatusCode = QHttpServerResponder::StatusCode;
+	using StatusCode = QHttpServerResponder::StatusCode;
+	using HeaderMap = QHttpServerResponder::HeaderMap;
 
-    QHttpServerResponse() = delete;
-    QHttpServerResponse(const QHttpServerResponse &other) = delete;
-    QHttpServerResponse& operator=(const QHttpServerResponse &other) = delete;
+	QHttpServerResponse() = delete;
+	QHttpServerResponse(const QHttpServerResponse &other) = delete;
+	QHttpServerResponse& operator=(const QHttpServerResponse &other) = delete;
 
-    QHttpServerResponse(QHttpServerResponse &&other);
-    QHttpServerResponse& operator=(QHttpServerResponse &&other) = delete;
+	QHttpServerResponse(QHttpServerResponse &&other);
+	QHttpServerResponse& operator=(QHttpServerResponse &&other) = delete;
 
-    QHttpServerResponse(const StatusCode statusCode);
-    QHttpServerResponse(const char *data);
-    QHttpServerResponse(const QString &data);
-    explicit QHttpServerResponse(const QByteArray &data);
-    QHttpServerResponse(const QJsonObject &data);
-    QHttpServerResponse(const QByteArray &mimeType,
-                        const QByteArray &data,
-                        const StatusCode status = StatusCode::Ok);
-    virtual ~QHttpServerResponse();
-    static QHttpServerResponse fromFile(const QString &fileName);
+	QHttpServerResponse(const StatusCode statusCode);
+	QHttpServerResponse(const char *data);
+	QHttpServerResponse(const QString &data);
+	explicit QHttpServerResponse(const QByteArray &data);
+	QHttpServerResponse(const QJsonObject &data);
+	QHttpServerResponse(const QByteArray &mimeType,
+						const QByteArray &data,
+						const StatusCode status = StatusCode::Ok,
+						const HeaderMap &headers = {});
+	virtual ~QHttpServerResponse();
+	static QHttpServerResponse fromFile(const QString &fileName);
 
-    QByteArray data() const;
+	QByteArray data() const;
 
-    QByteArray mimeType() const;
+	QByteArray mimeType() const;
 
-    StatusCode statusCode() const;
+	StatusCode statusCode() const;
+
+	HeaderMap headers() const;
 private:
-    QHttpServerResponse(QHttpServerResponsePrivate *d);
+	QHttpServerResponse(QHttpServerResponsePrivate *d);
 
-    QScopedPointer<QHttpServerResponsePrivate> d_ptr;
+	QScopedPointer<QHttpServerResponsePrivate> d_ptr;
 };
 
 QT_END_NAMESPACE

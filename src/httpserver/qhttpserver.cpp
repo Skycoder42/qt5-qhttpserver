@@ -45,100 +45,103 @@ QT_BEGIN_NAMESPACE
 Q_LOGGING_CATEGORY(lcHS, "qt.httpserver");
 
 /*!
-    \class QHttpServer
-    \brief QHttpServer is a simplified API for QAbstractHttpServer and QHttpServerRouter.
+	\class QHttpServer
+	\brief QHttpServer is a simplified API for QAbstractHttpServer and QHttpServerRouter.
 
-    \code
+	\code
 
-    QHttpServer server;
+	QHttpServer server;
 
-    server.route("/", [] () {
-        return "hello world";
-    });
-    server.listen();
+	server.route("/", [] () {
+		return "hello world";
+	});
+	server.listen();
 
-    \endcode
+	\endcode
 */
 
 QHttpServer::QHttpServer(QObject *parent)
-    : QAbstractHttpServer(*new QHttpServerPrivate, parent)
+	: QAbstractHttpServer(*new QHttpServerPrivate, parent)
 {
-    connect(this, &QAbstractHttpServer::missingHandler, this,
-            [=] (const QHttpServerRequest &request, QTcpSocket *socket) {
-        qCDebug(lcHS) << tr("missing handler:") << request.url().path();
-        sendResponse(
-                QHttpServerResponse(QHttpServerResponder::StatusCode::NotFound), request, socket);
-    });
+	connect(this, &QAbstractHttpServer::missingHandler, this,
+			[=] (const QHttpServerRequest &request, QTcpSocket *socket) {
+		qCDebug(lcHS) << tr("missing handler:") << request.url().path();
+		sendResponse(
+				QHttpServerResponse(QHttpServerResponder::StatusCode::NotFound), request, socket);
+	});
 }
 
 /*! \fn template<typename Rule = QHttpServerRouterRule, typename ... Args> bool route(Args && ... args)
-    This function is just a wrapper to simplify the router API.
+	This function is just a wrapper to simplify the router API.
 
-    This function takes variadic arguments. The last argument is \c a callback (ViewHandler).
-    The remaining arguments are used to create a new \a Rule (the default is QHttpServerRouterRule).
-    This is in turn added to the QHttpServerRouter.
+	This function takes variadic arguments. The last argument is \c a callback (ViewHandler).
+	The remaining arguments are used to create a new \a Rule (the default is QHttpServerRouterRule).
+	This is in turn added to the QHttpServerRouter.
 
-    \c ViewHandler can only be a lambda. The lambda definition can take an optional special argument,
-    either \c {const QHttpServerRequest&} or \c {QHttpServerResponder&&}.
-    This special argument must be the last in the parameter list.
+	\c ViewHandler can only be a lambda. The lambda definition can take an optional special argument,
+	either \c {const QHttpServerRequest&} or \c {QHttpServerResponder&&}.
+	This special argument must be the last in the parameter list.
 
-    Examples:
+	Examples:
 
-    \code
+	\code
 
-    QHttpServer server;
+	QHttpServer server;
 
-    // Valid:
-    server.route("test", [] (const int page) { return ""; });
-    server.route("test", [] (const int page, const QHttpServerRequest &request) { return ""; });
-    server.route("test", [] (QHttpServerResponder &&responder) { return ""; });
+	// Valid:
+	server.route("test", [] (const int page) { return ""; });
+	server.route("test", [] (const int page, const QHttpServerRequest &request) { return ""; });
+	server.route("test", [] (QHttpServerResponder &&responder) { return ""; });
 
-    // Invalid (compile time error):
-    server.route("test", [] (const QHttpServerRequest &request, const int page) { return ""; }); // request must be last
-    server.route("test", [] (QHttpServerRequest &request) { return ""; });      // request must be passed by const reference
-    server.route("test", [] (QHttpServerResponder &responder) { return ""; });  // responder must be passed by universal reference
+	// Invalid (compile time error):
+	server.route("test", [] (const QHttpServerRequest &request, const int page) { return ""; }); // request must be last
+	server.route("test", [] (QHttpServerRequest &request) { return ""; });      // request must be passed by const reference
+	server.route("test", [] (QHttpServerResponder &responder) { return ""; });  // responder must be passed by universal reference
 
-    \endcode
+	\endcode
 
-    \sa QHttpServerRouter::addRule
+	\sa QHttpServerRouter::addRule
 */
 
 /*!
-    Destroys a QHttpServer.
+	Destroys a QHttpServer.
 */
 QHttpServer::~QHttpServer()
 {
 }
 
 /*!
-    Returns the router object.
+	Returns the router object.
 */
 QHttpServerRouter *QHttpServer::router()
 {
-    Q_D(QHttpServer);
-    return &d->router;
+	Q_D(QHttpServer);
+	return &d->router;
 }
 
 /*!
-    \internal
+	\internal
 */
 void QHttpServer::sendResponse(const QHttpServerResponse &response,
-                               const QHttpServerRequest &request,
-                               QTcpSocket *socket)
+							   const QHttpServerRequest &request,
+							   QTcpSocket *socket)
 {
-    auto responder = makeResponder(request, socket);
-    responder.write(response.data(),
-                    response.mimeType(),
-                    response.statusCode());
+	auto responder = makeResponder(request, socket);
+	const auto headers = response.headers();
+	for (auto it = headers.constBegin(); it != headers.constEnd(); ++it)
+		responder.addHeader(it.key(), it.value());
+	responder.write(response.data(),
+					response.mimeType(),
+					response.statusCode());
 }
 
 /*!
-    \internal
+	\internal
 */
 bool QHttpServer::handleRequest(const QHttpServerRequest &request, QTcpSocket *socket)
 {
-    Q_D(QHttpServer);
-    return d->router.handleRequest(request, socket);
+	Q_D(QHttpServer);
+	return d->router.handleRequest(request, socket);
 }
 
 QT_END_NAMESPACE
