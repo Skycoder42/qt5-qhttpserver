@@ -51,133 +51,134 @@ class QHttpServerRequest;
 class QHttpServerResponderPrivate;
 class Q_HTTPSERVER_EXPORT QHttpServerResponder final
 {
-    Q_DECLARE_PRIVATE(QHttpServerResponder)
+	Q_DECLARE_PRIVATE(QHttpServerResponder)
 
-    friend class QAbstractHttpServer;
+	friend class QAbstractHttpServer;
 
 public:
-    enum class StatusCode {
-        // 1xx: Informational
-        Continue = 100,
-        SwitchingProtocols,
-        Processing,
+	enum class StatusCode {
+		// 1xx: Informational
+		Continue = 100,
+		SwitchingProtocols,
+		Processing,
 
-        // 2xx: Success
-        Ok = 200,
-        Created,
-        Accepted,
-        NonAuthoritativeInformation,
-        NoContent,
-        ResetContent,
-        PartialContent,
-        MultiStatus,
-        AlreadyReported,
-        IMUsed = 226,
+		// 2xx: Success
+		Ok = 200,
+		Created,
+		Accepted,
+		NonAuthoritativeInformation,
+		NoContent,
+		ResetContent,
+		PartialContent,
+		MultiStatus,
+		AlreadyReported,
+		IMUsed = 226,
 
-        // 3xx: Redirection
-        MultipleChoices = 300,
-        MovedPermanently,
-        Found,
-        SeeOther,
-        NotModified,
-        UseProxy,
-        // 306: not used, was proposed as "Switch Proxy" but never standardized
-        TemporaryRedirect = 307,
-        PermanentRedirect,
+		// 3xx: Redirection
+		MultipleChoices = 300,
+		MovedPermanently,
+		Found,
+		SeeOther,
+		NotModified,
+		UseProxy,
+		// 306: not used, was proposed as "Switch Proxy" but never standardized
+		TemporaryRedirect = 307,
+		PermanentRedirect,
 
-        // 4xx: Client Error
-        BadRequest = 400,
-        Unauthorized,
-        PaymentRequired,
-        Forbidden,
-        NotFound,
-        MethodNotAllowed,
-        NotAcceptable,
-        ProxyAuthenticationRequired,
-        RequestTimeout,
-        Conflict,
-        Gone,
-        LengthRequired,
-        PreconditionFailed,
-        PayloadTooLarge,
-        UriTooLong,
-        UnsupportedMediaType,
-        RequestRangeNotSatisfiable,
-        ExpectationFailed,
-        ImATeapot,
-        MisdirectedRequest = 421,
-        UnprocessableEntity,
-        Locked,
-        FailedDependency,
-        UpgradeRequired = 426,
-        PreconditionRequired = 428,
-        TooManyRequests,
-        RequestHeaderFieldsTooLarge = 431,
-        UnavailableForLegalReasons = 451,
+		// 4xx: Client Error
+		BadRequest = 400,
+		Unauthorized,
+		PaymentRequired,
+		Forbidden,
+		NotFound,
+		MethodNotAllowed,
+		NotAcceptable,
+		ProxyAuthenticationRequired,
+		RequestTimeout,
+		Conflict,
+		Gone,
+		LengthRequired,
+		PreconditionFailed,
+		PayloadTooLarge,
+		UriTooLong,
+		UnsupportedMediaType,
+		RequestRangeNotSatisfiable,
+		ExpectationFailed,
+		ImATeapot,
+		MisdirectedRequest = 421,
+		UnprocessableEntity,
+		Locked,
+		FailedDependency,
+		UpgradeRequired = 426,
+		PreconditionRequired = 428,
+		TooManyRequests,
+		RequestHeaderFieldsTooLarge = 431,
+		UnavailableForLegalReasons = 451,
 
-        // 5xx: Server Error
-        InternalServerError = 500,
-        NotImplemented,
-        BadGateway,
-        ServiceUnavailable,
-        GatewayTimeout,
-        HttpVersionNotSupported,
-        VariantAlsoNegotiates,
-        InsufficientStorage,
-        LoopDetected,
-        NotExtended = 510,
-        NetworkAuthenticationRequired,
-        NetworkConnectTimeoutError = 599,
-    };
+		// 5xx: Server Error
+		InternalServerError = 500,
+		NotImplemented,
+		BadGateway,
+		ServiceUnavailable,
+		GatewayTimeout,
+		HttpVersionNotSupported,
+		VariantAlsoNegotiates,
+		InsufficientStorage,
+		LoopDetected,
+		NotExtended = 510,
+		NetworkAuthenticationRequired,
+		NetworkConnectTimeoutError = 599,
+	};
 
-    using HeaderList = std::initializer_list<std::pair<QByteArray, QByteArray>>;
+	using HeaderList = std::initializer_list<std::pair<QByteArray, QByteArray>>;
 
-    QHttpServerResponder(QHttpServerResponder &&other);
-    ~QHttpServerResponder();
+	QHttpServerResponder(QHttpServerResponder &&other);
+	~QHttpServerResponder();
 
-    void write(QIODevice *data,
-               HeaderList headers,
-               StatusCode status = StatusCode::Ok);
+	void write(QIODevice *data,
+			   HeaderList headers,
+			   StatusCode status = StatusCode::Ok);
 
-    void write(QIODevice *data,
-               const QByteArray &mimeType,
-               StatusCode status = StatusCode::Ok);
+	void write(QIODevice *data,
+			   const QByteArray &mimeType,
+			   StatusCode status = StatusCode::Ok);
 
-    void write(const QJsonDocument &document,
-               HeaderList headers,
-               StatusCode status = StatusCode::Ok);
+	void write(const QJsonDocument &document,
+			   HeaderList headers,
+			   StatusCode status = StatusCode::Ok);
 
-    void write(const QJsonDocument &document,
-               StatusCode status = StatusCode::Ok);
+	void write(const QJsonDocument &document,
+			   StatusCode status = StatusCode::Ok);
 
-    void write(const QByteArray &data,
-               HeaderList headers,
-               StatusCode status = StatusCode::Ok);
+	void write(const QByteArray &data,
+			   HeaderList headers,
+			   StatusCode status = StatusCode::Ok);
 
-    void write(const QByteArray &data,
-               const QByteArray &mimeType,
-               StatusCode status = StatusCode::Ok);
+	void write(const QByteArray &data,
+			   const QByteArray &mimeType,
+			   StatusCode status = StatusCode::Ok);
 
-    void write(HeaderList headers, StatusCode status = StatusCode::Ok);
-    void write(StatusCode status = StatusCode::Ok);
+	void write(HeaderList headers, StatusCode status = StatusCode::Ok);
+	void write(StatusCode status = StatusCode::Ok);
 
 
-    void writeStatusLine(StatusCode status = StatusCode::Ok,
-                         const QPair<quint8, quint8> &version = qMakePair(1u, 1u));
+	void writeStatusLine(StatusCode status = StatusCode::Ok,
+						 const QPair<quint8, quint8> &version = qMakePair(1u, 1u));
 
-    void writeHeader(const QByteArray &key, const QByteArray &value);
-    void writeHeaders(HeaderList headers);
+	void writeHeader(const QByteArray &key, const QByteArray &value);
+	void writeHeaders(HeaderList headers);
 
-    void writeBody(const char *body, qint64 size);
-    void writeBody(const char *body);
-    void writeBody(const QByteArray &body);
+	void writeBody(const char *body, qint64 size);
+	void writeBody(const char *body);
+	void writeBody(const QByteArray &body);
 
-    QTcpSocket *socket() const;
+	const QHttpServerRequest &request() const;
+	QTcpSocket *socket() const;
 
 private:
-    QHttpServerResponder(const QHttpServerRequest &request, QTcpSocket *socket);
+	QHttpServerResponder(const QHttpServerRequest &request, QTcpSocket *socket);
 
-    QScopedPointer<QHttpServerResponderPrivate> d_ptr;
+	QScopedPointer<QHttpServerResponderPrivate> d_ptr;
 };
 
 QT_END_NAMESPACE

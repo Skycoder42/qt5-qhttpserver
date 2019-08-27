@@ -45,8 +45,8 @@ QT_BEGIN_NAMESPACE
 
 static const QLoggingCategory &lc()
 {
-    static const QLoggingCategory category("qt.httpserver.response");
-    return category;
+	static const QLoggingCategory category("qt.httpserver.response");
+	return category;
 }
 
 // https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
@@ -59,356 +59,362 @@ static const std::map<QHttpServerResponder::StatusCode, QByteArray> statusString
 template <qint64 BUFFERSIZE = 512>
 struct IOChunkedTransfer
 {
-    // TODO This is not the fastest implementation, as it does read & write
-    // in a sequential fashion, but these operation could potentially overlap.
-    // TODO Can we implement it without the buffer? Direct write to the target buffer
-    // would be great.
+	// TODO This is not the fastest implementation, as it does read & write
+	// in a sequential fashion, but these operation could potentially overlap.
+	// TODO Can we implement it without the buffer? Direct write to the target buffer
+	// would be great.
 
-    const qint64 bufferSize = BUFFERSIZE;
-    char buffer[BUFFERSIZE];
-    qint64 beginIndex = -1;
-    qint64 endIndex = -1;
-    QPointer<QIODevice> source;
-    const QPointer<QIODevice> sink;
-    const QMetaObject::Connection bytesWrittenConnection;
-    const QMetaObject::Connection readyReadConnection;
-    IOChunkedTransfer(QIODevice *input, QIODevice *output) :
-        source(input),
-        sink(output),
-        bytesWrittenConnection(QObject::connect(sink, &QIODevice::bytesWritten, [this] () {
-              writeToOutput();
-        })),
-        readyReadConnection(QObject::connect(source, &QIODevice::readyRead, [this] () {
-            readFromInput();
-        }))
-    {
-        Q_ASSERT(!source->atEnd());  // TODO error out
-        QObject::connect(sink, &QObject::destroyed, source, &QObject::deleteLater);
-        QObject::connect(source, &QObject::destroyed, [this] () {
-            delete this;
-        });
-        readFromInput();
-    }
+	const qint64 bufferSize = BUFFERSIZE;
+	char buffer[BUFFERSIZE];
+	qint64 beginIndex = -1;
+	qint64 endIndex = -1;
+	QPointer<QIODevice> source;
+	const QPointer<QIODevice> sink;
+	const QMetaObject::Connection bytesWrittenConnection;
+	const QMetaObject::Connection readyReadConnection;
+	IOChunkedTransfer(QIODevice *input, QIODevice *output) :
+		source(input),
+		sink(output),
+		bytesWrittenConnection(QObject::connect(sink, &QIODevice::bytesWritten, [this] () {
+			  writeToOutput();
+		})),
+		readyReadConnection(QObject::connect(source, &QIODevice::readyRead, [this] () {
+			readFromInput();
+		}))
+	{
+		Q_ASSERT(!source->atEnd());  // TODO error out
+		QObject::connect(sink, &QObject::destroyed, source, &QObject::deleteLater);
+		QObject::connect(source, &QObject::destroyed, [this] () {
+			delete this;
+		});
+		readFromInput();
+	}
 
-    ~IOChunkedTransfer()
-    {
-        QObject::disconnect(bytesWrittenConnection);
-        QObject::disconnect(readyReadConnection);
-    }
+	~IOChunkedTransfer()
+	{
+		QObject::disconnect(bytesWrittenConnection);
+		QObject::disconnect(readyReadConnection);
+	}
 
-    inline bool isBufferEmpty()
-    {
-        Q_ASSERT(beginIndex <= endIndex);
-        return beginIndex == endIndex;
-    }
+	inline bool isBufferEmpty()
+	{
+		Q_ASSERT(beginIndex <= endIndex);
+		return beginIndex == endIndex;
+	}
 
-    void readFromInput()
-    {
-        if (!isBufferEmpty()) // We haven't consumed all the data yet.
-            return;
-        beginIndex = 0;
-        endIndex = source->read(buffer, bufferSize);
-        if (endIndex < 0) {
-            endIndex = beginIndex; // Mark the buffer as empty
-            qCWarning(lc, "Error reading chunk: %s", qPrintable(source->errorString()));
-        } else if (endIndex) {
-            memset(buffer + endIndex, 0, sizeof(buffer) - std::size_t(endIndex));
-            writeToOutput();
-        }
-    }
+	void readFromInput()
+	{
+		if (!isBufferEmpty()) // We haven't consumed all the data yet.
+			return;
+		beginIndex = 0;
+		endIndex = source->read(buffer, bufferSize);
+		if (endIndex < 0) {
+			endIndex = beginIndex; // Mark the buffer as empty
+			qCWarning(lc, "Error reading chunk: %s", qPrintable(source->errorString()));
+		} else if (endIndex) {
+			memset(buffer + endIndex, 0, sizeof(buffer) - std::size_t(endIndex));
+			writeToOutput();
+		}
+	}
 
-    void writeToOutput()
-    {
-        if (isBufferEmpty())
-            return;
+	void writeToOutput()
+	{
+		if (isBufferEmpty())
+			return;
 
-        const auto writtenBytes = sink->write(buffer + beginIndex, endIndex);
-        if (writtenBytes < 0) {
-            qCWarning(lc, "Error writing chunk: %s", qPrintable(sink->errorString()));
-            return;
-        }
-        beginIndex += writtenBytes;
-        if (isBufferEmpty()) {
-            if (source->bytesAvailable())
-                QTimer::singleShot(0, source, [this]() { readFromInput(); });
-            else if (source->atEnd()) // Finishing
-                source->deleteLater();
-        }
-    }
+		const auto writtenBytes = sink->write(buffer + beginIndex, endIndex);
+		if (writtenBytes < 0) {
+			qCWarning(lc, "Error writing chunk: %s", qPrintable(sink->errorString()));
+			return;
+		}
+		beginIndex += writtenBytes;
+		if (isBufferEmpty()) {
+			if (source->bytesAvailable())
+				QTimer::singleShot(0, source, [this]() { readFromInput(); });
+			else if (source->atEnd()) // Finishing
+				source->deleteLater();
+		}
+	}
 };
 
 /*!
-    Constructs a QHttpServerResponder using the request \a request
-    and the socket \a socket.
+	Constructs a QHttpServerResponder using the request \a request
+	and the socket \a socket.
 */
 QHttpServerResponder::QHttpServerResponder(const QHttpServerRequest &request,
-                                           QTcpSocket *socket) :
-    d_ptr(new QHttpServerResponderPrivate(request, socket))
+										   QTcpSocket *socket) :
+	d_ptr(new QHttpServerResponderPrivate(request, socket))
 {
-    Q_ASSERT(socket);
+	Q_ASSERT(socket);
 }
 
 /*!
-    Move-constructs a QHttpServerResponder instance, making it point
-    at the same object that \a other was pointing to.
+	Move-constructs a QHttpServerResponder instance, making it point
+	at the same object that \a other was pointing to.
 */
 QHttpServerResponder::QHttpServerResponder(QHttpServerResponder &&other) :
-    d_ptr(other.d_ptr.take())
+	d_ptr(other.d_ptr.take())
 {}
 
 /*!
-    Destroys a QHttpServerResponder.
+	Destroys a QHttpServerResponder.
 */
 QHttpServerResponder::~QHttpServerResponder()
 {}
 
 /*!
-    Answers a request with an HTTP status code \a status and
-    HTTP headers \a headers. The I/O device \a data provides the body
-    of the response. If \a data is sequential, the body of the
-    message is sent in chunks: otherwise, the function assumes all
-    the content is available and sends it all at once but the read
-    is done in chunks.
+	Answers a request with an HTTP status code \a status and
+	HTTP headers \a headers. The I/O device \a data provides the body
+	of the response. If \a data is sequential, the body of the
+	message is sent in chunks: otherwise, the function assumes all
+	the content is available and sends it all at once but the read
+	is done in chunks.
 
-    \note This function takes the ownership of \a data.
+	\note This function takes the ownership of \a data.
 */
 void QHttpServerResponder::write(QIODevice *data,
-                                 HeaderList headers,
-                                 StatusCode status)
+								 HeaderList headers,
+								 StatusCode status)
 {
-    Q_D(QHttpServerResponder);
-    Q_ASSERT(d->socket);
-    QScopedPointer<QIODevice, QScopedPointerDeleteLater> input(data);
+	Q_D(QHttpServerResponder);
+	Q_ASSERT(d->socket);
+	QScopedPointer<QIODevice, QScopedPointerDeleteLater> input(data);
 
-    input->setParent(nullptr);
-    if (!input->isOpen()) {
-        if (!input->open(QIODevice::ReadOnly)) {
-            // TODO Add developer error handling
-            qCDebug(lc, "500: Could not open device %s", qPrintable(input->errorString()));
-            write(StatusCode::InternalServerError);
-            return;
-        }
-    } else if (!(input->openMode() & QIODevice::ReadOnly)) {
-        // TODO Add developer error handling
-        qCDebug(lc) << "500: Device is opened in a wrong mode" << input->openMode();
-        write(StatusCode::InternalServerError);
-        return;
-    }
+	input->setParent(nullptr);
+	if (!input->isOpen()) {
+		if (!input->open(QIODevice::ReadOnly)) {
+			// TODO Add developer error handling
+			qCDebug(lc, "500: Could not open device %s", qPrintable(input->errorString()));
+			write(StatusCode::InternalServerError);
+			return;
+		}
+	} else if (!(input->openMode() & QIODevice::ReadOnly)) {
+		// TODO Add developer error handling
+		qCDebug(lc) << "500: Device is opened in a wrong mode" << input->openMode();
+		write(StatusCode::InternalServerError);
+		return;
+	}
 
-    if (!d->socket->isOpen()) {
-        qCWarning(lc, "Cannot write to socket. It's disconnected");
-        return;
-    }
+	if (!d->socket->isOpen()) {
+		qCWarning(lc, "Cannot write to socket. It's disconnected");
+		return;
+	}
 
-    writeStatusLine(status);
+	writeStatusLine(status);
 
-    if (!input->isSequential()) { // Non-sequential QIODevice should know its data size
-        writeHeader(QHttpServerLiterals::contentLengthHeader(),
-                    QByteArray::number(input->size()));
-    }
+	if (!input->isSequential()) { // Non-sequential QIODevice should know its data size
+		writeHeader(QHttpServerLiterals::contentLengthHeader(),
+					QByteArray::number(input->size()));
+	}
 
-    for (auto &&header : headers)
-        writeHeader(header.first, header.second);
+	for (auto &&header : headers)
+		writeHeader(header.first, header.second);
 
-    d->socket->write("\r\n");
+	d->socket->write("\r\n");
 
-    if (input->atEnd()) {
-        qCDebug(lc, "No more data available.");
-        return;
-    }
+	if (input->atEnd()) {
+		qCDebug(lc, "No more data available.");
+		return;
+	}
 
-    // input takes ownership of the IOChunkedTransfer pointer inside his constructor
-    new IOChunkedTransfer<>(input.take(), d->socket);
+	// input takes ownership of the IOChunkedTransfer pointer inside his constructor
+	new IOChunkedTransfer<>(input.take(), d->socket);
 }
 
 /*!
-    Answers a request with an HTTP status code \a status and a
-    MIME type \a mimeType. The I/O device \a data provides the body
-    of the response. If \a data is sequential, the body of the
-    message is sent in chunks: otherwise, the function assumes all
-    the content is available and sends it all at once but the read
-    is done in chunks.
+	Answers a request with an HTTP status code \a status and a
+	MIME type \a mimeType. The I/O device \a data provides the body
+	of the response. If \a data is sequential, the body of the
+	message is sent in chunks: otherwise, the function assumes all
+	the content is available and sends it all at once but the read
+	is done in chunks.
 
-    \note This function takes the ownership of \a data.
+	\note This function takes the ownership of \a data.
 */
 void QHttpServerResponder::write(QIODevice *data,
-                                 const QByteArray &mimeType,
-                                 StatusCode status)
+								 const QByteArray &mimeType,
+								 StatusCode status)
 {
-    write(data,
-          {{ QHttpServerLiterals::contentTypeHeader(), mimeType }},
-          status);
+	write(data,
+		  {{ QHttpServerLiterals::contentTypeHeader(), mimeType }},
+		  status);
 }
 
 /*!
-    Answers a request with an HTTP status code \a status, JSON
-    document \a document and HTTP headers \a headers.
+	Answers a request with an HTTP status code \a status, JSON
+	document \a document and HTTP headers \a headers.
 
-    Note: This function sets HTTP Content-Type header as "application/json".
+	Note: This function sets HTTP Content-Type header as "application/json".
 */
 void QHttpServerResponder::write(const QJsonDocument &document,
-                                 HeaderList headers,
-                                 StatusCode status)
+								 HeaderList headers,
+								 StatusCode status)
 {
-    const QByteArray &json = document.toJson();
+	const QByteArray &json = document.toJson();
 
-    writeStatusLine(status);
-    writeHeader(QHttpServerLiterals::contentTypeHeader(),
-                QHttpServerLiterals::contentTypeJson());
-    writeHeader(QHttpServerLiterals::contentLengthHeader(),
-                QByteArray::number(json.size()));
-    writeHeaders(std::move(headers));
-    writeBody(document.toJson());
+	writeStatusLine(status);
+	writeHeader(QHttpServerLiterals::contentTypeHeader(),
+				QHttpServerLiterals::contentTypeJson());
+	writeHeader(QHttpServerLiterals::contentLengthHeader(),
+				QByteArray::number(json.size()));
+	writeHeaders(std::move(headers));
+	writeBody(document.toJson());
 }
 
 /*!
-    Answers a request with an HTTP status code \a status, and JSON
-    document \a document.
+	Answers a request with an HTTP status code \a status, and JSON
+	document \a document.
 
-    Note: This function sets HTTP Content-Type header as "application/json".
+	Note: This function sets HTTP Content-Type header as "application/json".
 */
 void QHttpServerResponder::write(const QJsonDocument &document,
-                                 StatusCode status)
+								 StatusCode status)
 {
-    write(document, {}, status);
+	write(document, {}, status);
 }
 
 /*!
-    Answers a request with an HTTP status code \a status,
-    HTTP Headers \a headers and a body \a data.
+	Answers a request with an HTTP status code \a status,
+	HTTP Headers \a headers and a body \a data.
 
-    Note: This function sets HTTP Content-Length header.
+	Note: This function sets HTTP Content-Length header.
 */
 void QHttpServerResponder::write(const QByteArray &data,
-                                 HeaderList headers,
-                                 StatusCode status)
+								 HeaderList headers,
+								 StatusCode status)
 {
-    Q_D(QHttpServerResponder);
-    writeStatusLine(status);
+	Q_D(QHttpServerResponder);
+	writeStatusLine(status);
 
-    for (auto &&header : headers)
-        writeHeader(header.first, header.second);
+	for (auto &&header : headers)
+		writeHeader(header.first, header.second);
 
-    writeHeader(QHttpServerLiterals::contentLengthHeader(),
-                QByteArray::number(data.size()));
-    writeBody(data);
+	writeHeader(QHttpServerLiterals::contentLengthHeader(),
+				QByteArray::number(data.size()));
+	writeBody(data);
 }
 
 /*!
-    Answers a request with an HTTP status code \a status, a
-    MIME type \a mimeType and a body \a data.
+	Answers a request with an HTTP status code \a status, a
+	MIME type \a mimeType and a body \a data.
 */
 void QHttpServerResponder::write(const QByteArray &data,
-                                 const QByteArray &mimeType,
-                                 StatusCode status)
+								 const QByteArray &mimeType,
+								 StatusCode status)
 {
-    write(data,
-          {{ QHttpServerLiterals::contentTypeHeader(), mimeType }},
-          status);
+	write(data,
+		  {{ QHttpServerLiterals::contentTypeHeader(), mimeType }},
+		  status);
 }
 
 /*!
-    Answers a request with an HTTP status code \a status.
+	Answers a request with an HTTP status code \a status.
 
-    Note: This function sets HTTP Content-Type header as "application/x-empty".
+	Note: This function sets HTTP Content-Type header as "application/x-empty".
 */
 void QHttpServerResponder::write(StatusCode status)
 {
-    write(QByteArray(), QHttpServerLiterals::contentTypeXEmpty(), status);
+	write(QByteArray(), QHttpServerLiterals::contentTypeXEmpty(), status);
 }
 
 /*!
-    Answers a request with an HTTP status code \a status and
-    HTTP Headers \a headers.
+	Answers a request with an HTTP status code \a status and
+	HTTP Headers \a headers.
 */
 void QHttpServerResponder::write(HeaderList headers, StatusCode status)
 {
-    write(QByteArray(), std::move(headers), status);
+	write(QByteArray(), std::move(headers), status);
 }
 
 /*!
-    This function writes HTTP status line with an HTTP status code \a status
-    and an HTTP version \a version.
+	This function writes HTTP status line with an HTTP status code \a status
+	and an HTTP version \a version.
 */
 void QHttpServerResponder::writeStatusLine(StatusCode status,
-                                           const QPair<quint8, quint8> &version)
+										   const QPair<quint8, quint8> &version)
 {
-    Q_D(const QHttpServerResponder);
-    Q_ASSERT(d->socket->isOpen());
-    d->socket->write("HTTP/");
-    d->socket->write(QByteArray::number(version.first));
-    d->socket->write(".");
-    d->socket->write(QByteArray::number(version.second));
-    d->socket->write(" ");
-    d->socket->write(QByteArray::number(quint32(status)));
-    d->socket->write(" ");
-    d->socket->write(statusString.at(status));
-    d->socket->write("\r\n");
+	Q_D(const QHttpServerResponder);
+	Q_ASSERT(d->socket->isOpen());
+	d->socket->write("HTTP/");
+	d->socket->write(QByteArray::number(version.first));
+	d->socket->write(".");
+	d->socket->write(QByteArray::number(version.second));
+	d->socket->write(" ");
+	d->socket->write(QByteArray::number(quint32(status)));
+	d->socket->write(" ");
+	d->socket->write(statusString.at(status));
+	d->socket->write("\r\n");
 }
 
 /*!
-    This function writes an HTTP header \a header
-    with \a value.
+	This function writes an HTTP header \a header
+	with \a value.
 */
 void QHttpServerResponder::writeHeader(const QByteArray &header,
-                                       const QByteArray &value)
+									   const QByteArray &value)
 {
-    Q_D(const QHttpServerResponder);
-    Q_ASSERT(d->socket->isOpen());
-    d->socket->write(header);
-    d->socket->write(": ");
-    d->socket->write(value);
-    d->socket->write("\r\n");
+	Q_D(const QHttpServerResponder);
+	Q_ASSERT(d->socket->isOpen());
+	d->socket->write(header);
+	d->socket->write(": ");
+	d->socket->write(value);
+	d->socket->write("\r\n");
 }
 
 /*!
-    This function writes HTTP headers \a headers.
+	This function writes HTTP headers \a headers.
 */
 void QHttpServerResponder::writeHeaders(HeaderList headers)
 {
-    for (auto &&header : headers)
-        writeHeader(header.first, header.second);
+	for (auto &&header : headers)
+		writeHeader(header.first, header.second);
 }
 
 /*!
-    This function writes HTTP body \a body with size \a size.
+	This function writes HTTP body \a body with size \a size.
 */
 void QHttpServerResponder::writeBody(const char *body, qint64 size)
 {
-    Q_D(QHttpServerResponder);
-    Q_ASSERT(d->socket->isOpen());
+	Q_D(QHttpServerResponder);
+	Q_ASSERT(d->socket->isOpen());
 
-    if (!d->bodyStarted) {
-        d->socket->write("\r\n");
-        d->bodyStarted = true;
-    }
+	if (!d->bodyStarted) {
+		d->socket->write("\r\n");
+		d->bodyStarted = true;
+	}
 
-    d->socket->write(body, size);
+	d->socket->write(body, size);
 }
 
 /*!
-    This function writes HTTP body \a body.
+	This function writes HTTP body \a body.
 */
 void QHttpServerResponder::writeBody(const char *body)
 {
-    writeBody(body, qstrlen(body));
+	writeBody(body, qstrlen(body));
 }
 
 /*!
-    This function writes HTTP body \a body.
+	This function writes HTTP body \a body.
 */
 void QHttpServerResponder::writeBody(const QByteArray &body)
 {
-    writeBody(body.constData(), body.size());
+	writeBody(body.constData(), body.size());
+}
+
+const QHttpServerRequest &QHttpServerResponder::request() const
+{
+	Q_D(const QHttpServerResponder);
+	return d->request;
 }
 
 /*!
-    Returns the socket used.
+	Returns the socket used.
 */
 QTcpSocket *QHttpServerResponder::socket() const
 {
-    Q_D(const QHttpServerResponder);
-    return d->socket;
+	Q_D(const QHttpServerResponder);
+	return d->socket;
 }
 
 QT_END_NAMESPACE
